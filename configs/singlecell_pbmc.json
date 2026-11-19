@@ -1,0 +1,64 @@
+{
+  "output_dir": "/path/to/single_cell/analyses",
+  "paths": {
+    "run_dir": "/path/to/single_cell/pbmc/pbmc_sc",
+    "pub_dir": "${run_dir}/publication"
+  },
+  "style": {
+    "font_family": ["Arial", "Helvetica", "DejaVu Sans"],
+    "font_size": 8,
+    "formats": ["pdf", "png"],
+    "dpi": 600
+  },
+  "scanpy": {
+    "min_cell_frac": 0.5,
+    "impute": "left_shift",
+    "n_pcs": 15,
+    "n_neighbors": 10,
+    "resolution": 0.5,
+    "min_obs_per_group": 3,
+    "resolutions": [0.2, 0.3, 0.5, 0.8, 1.0],
+    "top_n_markers": 3,
+    "seed": 0
+  },
+  "singlecell": {
+    "label": "PBMC",
+    "sample_meta_file": "/path/to/single_cell/sample_meta_pbmc.csv",
+    "levels": {
+      "precursor": {
+        "id_col": "Precursor.Id",
+        "matrices": {
+          "diann": "${pub_dir}/prec_matrix_diann.tsv",
+          "jumplion": "${pub_dir}/prec_matrix_diann_jumplion.tsv"
+        }
+      },
+      "protein": {
+        "id_col": "Protein.Group",
+        "matrices": {
+          "diann": "${pub_dir}/prot_matrix_diann.tsv",
+          "jumplion": "${pub_dir}/prot_matrix_diann_jumplion.tsv"
+        }
+      }
+    },
+    "protein_col": "Protein.Group",
+    "group_col": "Group",
+    "cv_min_cells": 5,
+    "panel_size": [1.9, 1.9],
+    "skip_analyses": ["cv_by_intensity", "paired_cv", "cell_correlation"],
+    "embedding": false,
+    "markers": {
+      "T cells": ["CD1A", "CD2", "CD2AP", "CD3E", "CD3G", "CD5", "CD8A", "CD44", "CD48", "CD59", "CD63", "ADGRE5", "CD99", "CD247"],
+      "B cells": ["CD44", "CD59", "CD74"],
+      "NK cells": ["CD2", "CD63", "ADGRE5", "CD99", "NCAM1", "KLRD1"],
+      "Dendritic cells": ["CD1A", "SLC44A1", "ADGRE5", "CD207", "CD1C", "CLEC9A", "CD74", "CST3"],
+      "Monocytes": ["CD9", "CD14", "CD33", "CD36", "CD44", "SLC44A1", "ADGRE5", "CD99", "CD74", "CST3"]
+    },
+    "violin_markers": ["CD74", "SLC44A1", "CD44", "CD33", "CD3E", "CD2", "CST3", "ADGRE5", "CD247", "CD59", "CD14"],
+    "violin_markers_main": ["CD33", "CD74", "SLC44A1", "ADGRE5"],
+    "marker_labels": {
+      "SLC44A1": "CD92",
+      "ADGRE5": "CD97"
+    },
+    "corr_max_cells": 200
+  }
+}

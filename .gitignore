@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.Rhistory
+.RData
+.Rproj.user/
+.ipynb_checkpoints/
+# figures and tables are written to the output_dir set in each config, not into this folder
+*.png
+*.pdf
+*.tif
+*.tsv
+Thumbs.db
+desktop.ini
+.DS_Store

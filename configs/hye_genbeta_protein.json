@@ -1,0 +1,67 @@
+{
+  "output_dir": "/path/to/gen_beta/analyses4_protein",  "datasets": {
+    "ultra_5m": {
+      "run_dir": "/path/to/gen_beta/ultra_5m",
+      "sample_meta_file": "/path/to/gen_beta/sample_meta_ultra_5m.csv",
+      "gradient": "5m"
+    },
+    "ultra_15m": {
+      "run_dir": "/path/to/gen_beta/ultra_15m",
+      "sample_meta_file": "/path/to/gen_beta/sample_meta_ultra_15m.csv",
+      "gradient": "15m"
+    },
+    "astral_5m": {
+      "run_dir": "/path/to/gen_beta/astral_5m",
+      "sample_meta_file": "/path/to/gen_beta/sample_meta_astral_5m.csv",
+      "gradient": "5m"
+    },
+    "astral_15m": {
+      "run_dir": "/path/to/gen_beta/astral_15m",
+      "sample_meta_file": "/path/to/gen_beta/sample_meta_astral_15m.csv",
+      "gradient": "15m"
+    }
+  },
+  "paths": {
+    "pub_dir": "${run_dir}/publication"
+  },
+  "run": ["differential_expression", "generalization"],
+  "style": {
+    "font_family": ["Arial", "Helvetica", "DejaVu Sans"],
+    "font_size": 8,
+    "formats": ["pdf", "png"],
+    "dpi": 600
+  },
+  "benchmark": {
+    "groups": {
+      "A": "H65Y30E05",
+      "B": "H65Y15E20",
+      "C": "H65Y03E32"
+    },
+    "contrasts": [["A", "B"], ["B", "C"]],
+    "padj_cutoff": 0.05
+  },
+  "differential_expression": {
+    "matrices": {
+      "diann": {"name": "diann_prot", "file": "${pub_dir}/prot_matrix_diann.tsv"},
+      "jumplion": {"name": "diann_jumplion_prot", "file": "${pub_dir}/prot_matrix_diann_jumplion.tsv"}
+    },
+    "mat_type": "Protein.Group",
+    "mat_sep": "\t",
+    "log_transform_input": true,
+    "p_adj_cutoff": 0.05,
+    "log2fc_cutoff": 0,
+    "padj_col": "p_adj",
+    "log2fc_col": "log2FC",
+    "overwrite": false,
+    "output_dir": null
+  },
+  "imputation_comparison": {
+    "rscript": null,
+    "seed": 1,
+    "methods": ["knn", "missforest", "minprob"]
+  },
+  "generalization": {
+    "id_col": "Protein.Group",
+    "precursor_table_dir": "/path/to/gen_beta/analyses3/generalization/table"
+  }
+}

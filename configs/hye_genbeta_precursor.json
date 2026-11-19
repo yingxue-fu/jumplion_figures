@@ -1,0 +1,67 @@
+{
+  "output_dir": "/path/to/gen_beta/analyses4",  "datasets": {
+    "ultra_5m": {
+      "run_dir": "/path/to/gen_beta/ultra_5m",
+      "sample_meta_file": "/path/to/gen_beta/sample_meta_ultra_5m.csv",
+      "gradient": "5m"
+    },
+    "ultra_15m": {
+      "run_dir": "/path/to/gen_beta/ultra_15m",
+      "sample_meta_file": "/path/to/gen_beta/sample_meta_ultra_15m.csv",
+      "gradient": "15m"
+    },
+    "astral_5m": {
+      "run_dir": "/path/to/gen_beta/astral_5m",
+      "sample_meta_file": "/path/to/gen_beta/sample_meta_astral_5m.csv",
+      "gradient": "5m"
+    },
+    "astral_15m": {
+      "run_dir": "/path/to/gen_beta/astral_15m",
+      "sample_meta_file": "/path/to/gen_beta/sample_meta_astral_15m.csv",
+      "gradient": "15m"
+    }
+  },
+  "paths": {
+    "pub_dir": "${run_dir}/publication"
+  },
+  "run": ["differential_expression", "generalization"],
+  "style": {
+    "font_family": ["Arial", "Helvetica", "DejaVu Sans"],
+    "font_size": 8,
+    "formats": ["pdf", "png"],
+    "dpi": 600
+  },
+  "benchmark": {
+    "groups": {
+      "A": "H65Y30E05",
+      "B": "H65Y15E20",
+      "C": "H65Y03E32"
+    },
+    "contrasts": [["A", "B"], ["B", "C"]],
+    "padj_cutoff": 0.05
+  },
+  "differential_expression": {
+    "normalization": "normalized",
+    "matrices": {
+      "diann": {
+        "normalized": {"name": "diann_norm", "file": "${pub_dir}/prec_matrix_diann_norm.tsv"},
+        "raw": {"name": "diann_raw", "file": "${pub_dir}/prec_matrix_diann.tsv"}
+      },
+      "jumplion": {
+        "normalized": {"name": "diann_jumplion_norm", "file": "${pub_dir}/prec_matrix_diann_jumplion_norm.tsv"},
+        "raw": {"name": "diann_jumplion_raw", "file": "${pub_dir}/prec_matrix_diann_jumplion.tsv"}
+      }
+    },
+    "fasta_files": ["/path/to/HYE_mix.fasta"],
+    "mat_type": "Precursor.Id",
+    "mat_sep": "\t",
+    "log_transform_input": true,
+    "p_adj_cutoff": 0.05,
+    "log2fc_cutoff": 0,
+    "padj_col": "p_adj",
+    "log2fc_col": "log2FC",
+    "overwrite": false,
+    "output_dir": null
+  },
+  "generalization": {}
+}

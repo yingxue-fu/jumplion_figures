@@ -1,0 +1,40 @@
+{
+  "output_dir": "/path/to/single_cell/analyses",
+  "paths": {
+    "run_dir": "/path/to/single_cell/hela/hela_sc",
+    "pub_dir": "${run_dir}/publication"
+  },
+  "style": {
+    "font_family": ["Arial", "Helvetica", "DejaVu Sans"],
+    "font_size": 8,
+    "formats": ["pdf", "png"],
+    "dpi": 600
+  },
+  "singlecell": {
+    "label": "HeLa",
+    "sample_meta_file": "/path/to/single_cell/sample_meta_hela.csv",
+    "levels": {
+      "precursor": {
+        "id_col": "Precursor.Id",
+        "matrices": {
+          "diann": "${pub_dir}/prec_matrix_diann.tsv",
+          "jumplion": "${pub_dir}/prec_matrix_diann_jumplion.tsv"
+        }
+      },
+      "protein": {
+        "id_col": "Protein.Group",
+        "matrices": {
+          "diann": "${pub_dir}/prot_matrix_diann.tsv",
+          "jumplion": "${pub_dir}/prot_matrix_diann_jumplion.tsv"
+        }
+      }
+    },
+    "protein_col": "Protein.Group",
+    "group_col": null,
+    "cv_min_cells": 5,
+    "pca_min_cell_frac": 0.5,
+    "embedding": true,
+    "umap": false,
+    "corr_max_cells": 200
+  }
+}

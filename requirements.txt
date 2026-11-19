@@ -1,0 +1,15 @@
+# Python packages for make_figures.py (unpinned; developed with Python 3.12)
+numpy
+pandas
+scipy
+matplotlib
+pyarrow
+statsmodels
+seaborn
+biopython
+scikit-learn
+# PBMC clustering (singlecell_pbmc)
+scanpy
+anndata
+python-igraph
+# optional: umap-learn
