@@ -4,6 +4,25 @@ Figures comparing DIA-NN with JUMPlion: the HYE benchmark (performance, mechanis
 generalization to other instruments/gradients (precursor and protein level), and the single-cell
 datasets (HeLa, PBMC). One visual style (`jumplion_figures/style.py`) for everything.
 
+## Installation
+
+This is a set of scripts, not an installable package: clone it and run `make_figures.py` from the cloned folder. There is no `pip install .` step, and the JUMPlion tool itself is not needed, only its output tables.
+
+```
+git clone https://github.com/yingxue-fu/jumplion_figures.git
+cd jumplion_figures
+
+python -m venv .venv                      # optional, recommended
+.venv\Scripts\activate                    # Windows (macOS/Linux: source .venv/bin/activate)
+pip install -r requirements.txt
+```
+
+Instead of `git clone` you can download the ZIP from GitHub (Code → Download ZIP) and unzip it anywhere; the rest is the same. Keep the folders (`configs/`, `jumplion_figures/`, `r_scripts/`) next to `make_figures.py`, since it finds them by their location: copying single scripts out will not work.
+
+- **Python**: 3.9 or newer (developed with 3.12). `requirements.txt` has numpy, pandas, scipy, matplotlib, pyarrow; statsmodels, seaborn and biopython for `differential_expression`; scanpy, anndata, scikit-learn and python-igraph (or leidenalg) for the PBMC step. `umap-learn` is optional.
+- **R** (only for the opt-in `imputation_comparison` target): R (developed with 4.4.3); then `Rscript r_scripts/install_packages.R` installs impute, missForest, imputeLCMD, data.table, ggplot2, patchwork and the rest. The figures use the Arial font, which needs to be installed on the machine.
+- **Your data**: the paths in `configs/*.json` are placeholders (`/path/to/...`). Replace them with the locations of your own DIA-NN / JUMPlion tables and sample-meta files before running (see Quick start and the table below for what each target needs).
+
 ## Quick start
 
 One entry point, `make_figures.py`. Name the targets you want, or give none to run all of them:
@@ -45,13 +64,6 @@ limits the pipeline targets to some of their stages (`imputation_comparison` has
 ```
 python -m jumplion_figures.pipeline --config configs/hye_wang.json --normalization raw
 ```
-
-Setup: `pip install -r requirements.txt` (Python packages; developed with Python 3.12). The `imputation_comparison` target also needs R and its packages: `Rscript r_scripts/install_packages.R`. The paths in `configs/*.json` are placeholders (`/path/to/...`): replace them with the locations of your data before running.
-
-Requirements: Python 3.9+, numpy, pandas, scipy, matplotlib, pyarrow. `differential_expression`
-also needs statsmodels, seaborn and biopython. The PBMC scanpy step needs scanpy, anndata,
-scikit-learn and python-igraph (or leidenalg). `umap-learn` is optional. No `jumplion` install is
-required.
 
 ## Project layout
 
