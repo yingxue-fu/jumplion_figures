@@ -45,11 +45,7 @@ python make_figures.py imputation_comparison --stages plots   # redraw its figur
 | `singlecell_pbmc` | `configs/singlecell_pbmc.json` | single-cell PBMC (general panels + scanpy) | PBMC matrices, sample meta; scanpy |
 | `imputation_comparison` (opt-in) | `imputation_comparison` block of `configs/hye_genbeta_protein.json` | JUMPlion vs KNN / missForest / MinProb imputation of DIA-NN, protein level, in R: `Supp_Generalization_F` (combined), `G` (restored proteins), `H` (FDR vs true-positive curves) | R (`Rscript`; packages impute, missForest, imputeLCMD, data.table, ggplot2, patchwork), the `hye_genbeta` protein matrices (DIA-NN and JUMPlion) |
 
-`imputation_comparison` is opt-in: it only runs when named (`python make_figures.py imputation_comparison`), never in the default run. Its stages are `impute` (writes `prot_matrix_diann_{knn,missforest,minprob}.tsv` beside each dataset's DIA-NN matrix), `compare` (per-dataset tables `imputation_comparison_<dataset>.tsv` and `imputation_fdr_sensitivity_curves.tsv`) and `plots`; `--stages plots` redraws the figures without redoing the slow imputation. The R scripts sit in `r_scripts/` (`impute_protein_matrices.R`, `compare_imputation.R`, `compare_imputation_combined.R`, `compare_imputation_curves.R`, shared theme `jumplion_theme.R`, which mirrors `style.py`). `Rscript` is taken from `imputation_comparison.rscript` in the config, `$RSCRIPT`, the PATH, or `C:/Program Files/R`; the seed and methods are in the same block.
-
-Run it from this folder. Before the first run the DIA-NN and JUMPlion protein matrices (`prot_matrix_diann.tsv`, `prot_matrix_diann_jumplion.tsv` in each dataset's `publication/` folder) must exist for all four datasets; the target lists any that are missing and stops. Stages combine freely: `--stages compare plots` rebuilds the tables and figures without redoing the slow imputation (missForest dominates the run time). The figures go to `<output_dir>/generalization/supp/` (`Supp_Generalization_F_imputation_comparison_all_datasets_combined`, `G_imputation_comparison_restored`, `H_imputation_fdr_tp_curves`), the tables to `<output_dir>/generalization/table/`. A failing R step stops the later ones and the summary shows `FAILED`.
-
-Troubleshooting: if `Rscript` is not found, set `imputation_comparison.rscript` in `configs/hye_genbeta_protein.json` (e.g. `C:/Program Files/R/R-4.4.3/bin/Rscript.exe`) or the `RSCRIPT` environment variable. If a PNG or PDF cannot be written ("cairo error" / "agg could not write"), close the file in any viewer that has it open, or pause OneDrive sync, and rerun with `--stages plots`. The results come from a single imputation seed.
+The opt-in `imputation_comparison` target is described in [Imputation comparison (R)](#imputation-comparison-r).
 
 Targets run in the order above, each in its own Python process. A failing target is reported and the
 rest still run. Within `hye_genbeta` the protein step reads tables written by the precursor step, so
@@ -87,7 +83,9 @@ jumplion_figures/
   singlecell_scanpy.py         PBMC protein-level clustering, markers, integrated figure
 ```
 
-## Pipeline stages
+## Benchmark
+
+The HYE benchmark targets (`hye_wang`, `hye_genbeta`) run through the pipeline stages below; the sections after the stage table describe what each dataset's figures show: **HYE_Wang** (stage `performance`) and **HYE_GenBeta** (stage `generalization`).
 
 Stages always run in this order; choose a subset with `"run"` in the config or `--stages`:
 
@@ -112,9 +110,9 @@ python make_figures.py hye_wang --stages differential_expression performance
 * `--normalization raw|normalized` switches which matrix pair DE uses (when the config offers both),
   without editing the config.
 
-### performance
+### HYE_Wang
 
-Organized around DIA-NN's own completeness per contrast: **Complete** (6/6 in both groups),
+Target `hye_wang`, stage `performance`; output in `performance/{main,supp,table}`. Organized around DIA-NN's own completeness per contrast: **Complete** (6/6 in both groups),
 **Partially complete** (>= 3/6 in both groups but < 6/6 in at least one) and **Insufficient**
 (< 3/6 in at least one group). Insufficient precursors are split into those that *remain
 insufficient* and those that *become sufficient* once JUMPlion fills gaps.
@@ -130,9 +128,9 @@ insufficient* and those that *become sufficient* once JUMPlion fills gaps.
 (FP + wrong direction) / (TP + FP + wrong direction). The earlier human-only FP / (TP + FP) is still
 written to the tables as `empirical_fdr_fp_only` (with `fdr_fp_only_ci_low/high`).
 
-### generalization
+### HYE_GenBeta
 
-Run once per config; with several `datasets`, every dataset's data goes into the same figures.
+Target `hye_genbeta`, stage `generalization`; output in `generalization/{main,supp,table}`. Run once per config; with several `datasets`, every dataset's data goes into the same figures.
 
 * Precursor run (`hye_genbeta_precursor.json`): `A_coverage_all_datasets`,
   `B_completeness_by_method_all_datasets`, and per `COMBINED_CONTRASTS` entry
@@ -167,6 +165,34 @@ precursor-level panels `Supp_` (supp); this routing is fixed in the code.
   UMAP (N) and cluster dot plot (S), plus `Fig_SingleCell_PBMC_Integrated`. No cell types are assigned.
 * `singlecell.panel_size` in the PBMC config (`[1.9, 1.9]`) must match the integrated figure's A/B
   width (`INT_AB_W` in `singlecell_scanpy.py`).
+
+## Imputation comparison (R)
+
+`imputation_comparison` compares JUMPlion with imputing the DIA-NN protein matrix by KNN, missForest and MinProb, on the four `hye_genbeta` datasets. It is written in R and is opt-in: it only runs when named, never in the default run.
+
+```
+python make_figures.py imputation_comparison                  # all stages
+python make_figures.py imputation_comparison --stages plots   # redraw the figures only
+```
+
+**Before the first run**
+- Run it from the project folder. Install R and its packages first (see Installation).
+- The DIA-NN and JUMPlion protein matrices (`prot_matrix_diann.tsv`, `prot_matrix_diann_jumplion.tsv` in each dataset's `publication/` folder) must exist for all four datasets. The target lists any that are missing and stops.
+- Settings are in the `imputation_comparison` block of `configs/hye_genbeta_protein.json`: `rscript`, `seed` and `methods`. `Rscript` is taken from `imputation_comparison.rscript`, then `$RSCRIPT`, then the PATH, then `C:/Program Files/R`.
+
+**Stages** (combine freely; a failing R step stops the later ones and the summary shows `FAILED`)
+- `impute`: writes `prot_matrix_diann_{knn,missforest,minprob}.tsv` beside each dataset's DIA-NN matrix. This is the slow stage (missForest dominates).
+- `compare`: writes the per-dataset tables `imputation_comparison_<dataset>.tsv` and `imputation_fdr_sensitivity_curves.tsv` to `<output_dir>/generalization/table/`.
+- `plots`: draws the figures into `<output_dir>/generalization/supp/`: `Supp_Generalization_F_imputation_comparison_all_datasets_combined`, `Supp_Generalization_G_imputation_comparison_restored` and `Supp_Generalization_H_imputation_fdr_tp_curves`.
+
+For example, `--stages compare plots` rebuilds the tables and figures without redoing the imputation.
+
+**Scripts** in `r_scripts/`: `impute_protein_matrices.R`, `compare_imputation.R`, `compare_imputation_combined.R`, `compare_imputation_curves.R`, `install_packages.R`, and the shared ggplot theme `jumplion_theme.R`, which mirrors `style.py`.
+
+**Troubleshooting**
+- `Rscript` not found: set `imputation_comparison.rscript` in `configs/hye_genbeta_protein.json` (e.g. `C:/Program Files/R/R-4.4.3/bin/Rscript.exe`) or the `RSCRIPT` environment variable.
+- A PNG or PDF cannot be written ("cairo error" / "agg could not write"): close the file in any viewer that has it open, or pause OneDrive sync, and rerun with `--stages plots`.
+- The results come from a single imputation seed.
 
 ## Config
 
