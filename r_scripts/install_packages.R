@@ -5,6 +5,15 @@
 # randomForest 4.7.1.2, imputeLCMD 2.1, pcaMethods 1.98.0, data.table 1.18.2.1, ggplot2 4.0.3, patchwork 1.3.2,
 # systemfonts 1.3.2, ragg 1.5.2. Figures use the Arial font (the Python figures do too) and cairo for the PDFs.
 repos <- "https://cloud.r-project.org"
+# A shared R (cluster module, system install) has a read-only library: install into a personal one instead.
+# R puts R_LIBS_USER on the library path by default once it exists, so the other scripts find the packages.
+if (file.access(.libPaths()[1], 2) != 0) {
+  user_lib <- Sys.getenv("R_LIBS_USER")
+  if (!nzchar(user_lib)) user_lib <- file.path(Sys.getenv("HOME"), "R", paste0("library-", getRversion()$major, ".", getRversion()$minor))
+  dir.create(user_lib, recursive = TRUE, showWarnings = FALSE)
+  .libPaths(c(user_lib, .libPaths()))
+  message("R library is read-only; installing into ", user_lib)
+}
 cran <- c("data.table", "ggplot2", "patchwork", "missForest", "systemfonts", "ragg")
 bioc <- c("impute", "pcaMethods")  # imputeLCMD needs pcaMethods; imputeLCMD itself is on CRAN
 for (p in cran) if (!requireNamespace(p, quietly = TRUE)) install.packages(p, repos = repos)

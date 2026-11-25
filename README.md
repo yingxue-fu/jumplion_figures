@@ -22,7 +22,12 @@ The `pip install` runs inside the conda environment and installs everything in `
 Instead of `git clone` you can download the ZIP from GitHub (Code → Download ZIP) and unzip it anywhere; the rest is the same. Keep the folders (`configs/`, `jumplion_figures/`, `r_scripts/`) next to `make_figures.py`, since it finds them by their location: copying single scripts out will not work.
 
 - **Python**: 3.9 or newer (developed with 3.12). `requirements.txt` has numpy, pandas, scipy, matplotlib, pyarrow; statsmodels, seaborn and biopython for `differential_expression`; scanpy, anndata, scikit-learn and python-igraph (or leidenalg) for the PBMC step. `umap-learn` is optional.
-- **R** (only for the opt-in `imputation_comparison` target): R (developed with 4.4.3); then `Rscript r_scripts/install_packages.R` installs impute, missForest, imputeLCMD, data.table, ggplot2, patchwork and the rest. The figures use the Arial font, which needs to be installed on the machine.
+- **R** (only for the opt-in `imputation_comparison` target): R (developed with 4.4.3); then `Rscript r_scripts/install_packages.R` installs impute, missForest, imputeLCMD, data.table, ggplot2, patchwork and the rest (on a cluster or other shared R whose library is read-only, it installs into your personal library, `R_LIBS_USER`, instead).### Fonts
+
+The figures use Arial. Windows and macOS have it; most Linux machines and clusters do not. The code does not stop without it: Python falls back along `style.font_family` in the config (Arial, Helvetica, DejaVu Sans) and R along Arial, Liberation Sans, Arimo, Helvetica, Nimbus Sans, then the default sans font (R prints a message saying which one it used). Liberation Sans and Arimo have the same glyph widths as Arial, so the layout is unchanged and only the letter shapes differ.
+
+To get real Arial on Linux without admin rights, copy the `arial*.ttf` files from a Windows or macOS machine you are licensed on (Windows: `C:\Windows\Fonts`) into `~/.fonts/`, then run `fc-cache -f` and delete matplotlib's font cache (`~/.cache/matplotlib`) so Python picks it up. Arial is proprietary and is not included in this repository.
+
 ### Set up your configs
 
 After installing, edit the config of each target you want to run. The paths in `configs/*.json` are placeholders (`/path/to/...`), so nothing runs until you replace them with the locations of your own DIA-NN / JUMPlion tables.
