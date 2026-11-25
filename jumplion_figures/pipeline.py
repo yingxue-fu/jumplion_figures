@@ -31,10 +31,10 @@ Prepared data (DE tables, features file) is reused unless the matching "overwrit
 
 Multiple datasets
 -----------------
-    A top-level "datasets": {name: {"run_dir": ..., "sample_meta_file": ...}, ...} block runs
+    A top-level "datasets": {name: {"jumplion_outdir": ..., "sample_meta_file": ...}, ...} block runs
     every stage once per dataset against an otherwise identical config -- for datasets that share
     the same benchmark groups/comparisons and differ only in where their files live and what their
-    samples are named. Each dataset's run_dir is substituted for ${run_dir} in its own copy of the
+    samples are named. Each dataset's jumplion_outdir is substituted for ${jumplion_outdir} in its own copy of the
     config, and its output lands under <output_dir>/<stage>/<dataset_name>/... (stage first,
     dataset second, so each stage's folder holds every dataset). Omit "datasets" to run a single
     dataset as before (output lands directly under <output_dir>/<stage>/...).
@@ -113,15 +113,15 @@ def main(argv=None):
     log = logging.getLogger("jumplion_figures")
     raw_cfg = read_raw_config(args.config)
 
-    # "datasets": {name: {"run_dir": ..., "sample_meta_file": ...}, ...} runs every stage once per
-    # dataset, substituting each dataset's own run_dir (and sample_meta_file) into an otherwise
+    # "datasets": {name: {"jumplion_outdir": ..., "sample_meta_file": ...}, ...} runs every stage once per
+    # dataset, substituting each dataset's own jumplion_outdir (and sample_meta_file) into an otherwise
     # identical config -- for several datasets that share the same benchmark groups/comparisons
     # and differ only in where their files live and what their samples are named.
     datasets = raw_cfg.get("datasets")
 
     # strict=False when "datasets" is present: this "base" pass only reads top-level style/
     # output_dir/run below, never the dataset-scoped (per-dataset-substituted) sections, so it
-    # shouldn't fail just because ${run_dir} (supplied per dataset, not here) can't resolve yet.
+    # shouldn't fail just because ${jumplion_outdir} (supplied per dataset, not here) can't resolve yet.
     base_cfg = substitute_config(raw_cfg, strict=not datasets)
 
     base_out_root = (Path(args.output_dir) if args.output_dir
@@ -146,7 +146,7 @@ def main(argv=None):
             raw_ds = copy.deepcopy(raw_cfg)
             if "sample_meta_file" in ds_overrides:
                 raw_ds.setdefault("differential_expression", {})["sample_meta_file"] = ds_overrides["sample_meta_file"]
-            cfg = substitute_config(raw_ds, {"run_dir": ds_overrides["run_dir"]})
+            cfg = substitute_config(raw_ds, {"jumplion_outdir": ds_overrides["jumplion_outdir"]})
         if args.normalization:
             cfg.setdefault("differential_expression", {})["normalization"] = args.normalization
 

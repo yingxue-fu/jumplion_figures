@@ -1,8 +1,12 @@
 {
-  "output_dir": "${run_dir}/analyses5",  "paths": {
-    "run_dir": "/path/to/jl_test/test_ms1ms2_new16",
-    "pub_dir": "${run_dir}/publication",
-    "inter_dir": "${run_dir}/intermediate"
+  "output_dir": "${jumplion_outdir}/analyses5",
+  "paths": {
+    "jumplion_outdir": "/path/to/jl_test/test_ms1ms2_new16",
+    "sample_meta": "/path/to/jl_test/sample_meta.csv",
+    "fasta": "/path/to/HYE_mix.fasta",
+    "spectral_library": "/path/to/spectral_library.parquet",
+    "pub_dir": "${jumplion_outdir}/publication",
+    "inter_dir": "${jumplion_outdir}/intermediate"
   },
   "run": ["differential_expression", "performance", "mechanism"],
   "style": {
@@ -27,8 +31,8 @@
       "diann": {"name": "diann_norm", "file": "${pub_dir}/prec_matrix_diann_norm.tsv"},
       "jumplion": {"name": "diann_jumplion_norm", "file": "${pub_dir}/prec_matrix_diann_jumplion_norm.tsv"}
     },
-    "sample_meta_file": "/path/to/jl_test/sample_meta.csv",
-    "fasta_files": ["/path/to/HYE_mix.fasta"],
+    "sample_meta_file": "${sample_meta}",
+    "fasta_files": ["${fasta}"],
     "mat_type": "Precursor.Id",
     "mat_sep": "\t",
     "value_start_col": 5,
@@ -50,6 +54,7 @@
     "rt_run_metrics": "${inter_dir}/rt_prediction/rt_cross_validation_run_metrics.tsv",
     "rt_error_histogram": "${inter_dir}/rt_prediction/rt_cross_validation_error_histogram.tsv",
     "rt_representative_run": "${inter_dir}/rt_prediction/rt_cross_validated_predictions_representative_run.tsv",
+    "rt_cv_regenerate": {"rt_matrix": "${inter_dir}/rt_prediction/rt_mat_before_prediction.tsv", "library": "${spectral_library}", "min_run_fraction": 0.5},
     "rt_extraction_half_window": 0.3015,
     "rt_cv": null,
     "rt_half_window_points": 15,
@@ -74,7 +79,6 @@
     "max_slope": 1.5,
     "max_mae": 0.5,
     "max_extrapolation_log2": 2,
-    "species_annotation": "${run_dir}/analyses2/differential_expression/diann_norm_dea_results/diann_norm_H50Y20E30_vs_H50Y10E40_pre_DE.csv",
-    "production_module_dir": "."
+    "species_annotation": "${jumplion_outdir}/analyses2/differential_expression/diann_norm_dea_results/diann_norm_H50Y20E30_vs_H50Y10E40_pre_DE.csv"
   }
 }

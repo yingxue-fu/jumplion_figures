@@ -38,6 +38,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from jumplion_figures import __version__  # noqa: E402  (single source: jumplion_figures/__init__.py)
+from jumplion_figures.common import substitute_config  # noqa: E402
 CONFIGS = HERE / "configs"
 
 PIPELINE = "pipeline"
@@ -108,18 +109,19 @@ def imputation_commands(output_dir, stages):
     """Ordered (label, command) list for the imputation_comparison target: the R scripts next to this file.
 
     Settings come from the imputation_comparison block of the protein-level generalization config; the
-    dataset names and the gen_beta root (the parent of each run_dir) from the same config."""
-    cfg = json.loads((CONFIGS / IMPUTATION_CONFIG).read_text(encoding="utf-8"))
+    dataset names and the gen_beta root (the parent of each jumplion_outdir) from the same config."""
+    # ${name} in the paths are expanded from the config's "paths" block (jumplion_outdir itself is per dataset, so lenient)
+    cfg = substitute_config(json.loads((CONFIGS / IMPUTATION_CONFIG).read_text(encoding="utf-8")), strict=False)
     opts = cfg.get("imputation_comparison", {})
     datasets = list(cfg["datasets"])
-    root = Path(cfg["datasets"][datasets[0]]["run_dir"]).parent
+    root = Path(cfg["datasets"][datasets[0]]["jumplion_outdir"]).parent
     ana = output_dir or cfg["output_dir"]
     rscript = find_rscript(opts.get("rscript"))
     methods = ",".join(opts.get("methods", ["knn", "missforest", "minprob"]))
     seed = str(opts.get("seed", 1))
-    missing = [str(Path(cfg["datasets"][d]["run_dir"]) / "publication" / f)
+    missing = [str(Path(cfg["datasets"][d]["jumplion_outdir"]) / "publication" / f)
                for d in datasets for f in ("prot_matrix_diann.tsv", "prot_matrix_diann_jumplion.tsv")
-               if not (Path(cfg["datasets"][d]["run_dir"]) / "publication" / f).exists()]
+               if not (Path(cfg["datasets"][d]["jumplion_outdir"]) / "publication" / f).exists()]
     if missing:
         raise FileNotFoundError("imputation_comparison needs these protein matrices first:\n  " + "\n  ".join(missing))
     run = lambda script, *a: [rscript, str(HERE / "r_scripts" / script), *a]  # noqa: E731

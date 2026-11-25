@@ -13,3 +13,5 @@ scanpy
 anndata
 python-igraph
 # optional: umap-learn
+# JUMPlion release (provides jumplion.intensity_mapping, used by the mechanism stage); needs Python 3.12+
+jumplion>=1.0

@@ -1,8 +1,9 @@
 {
   "output_dir": "/path/to/single_cell/analyses",
   "paths": {
-    "run_dir": "/path/to/single_cell/hela/hela_sc",
-    "pub_dir": "${run_dir}/publication"
+    "jumplion_outdir": "/path/to/single_cell/hela/hela_sc",
+    "sample_meta": "/path/to/single_cell/sample_meta_hela.csv",
+    "pub_dir": "${jumplion_outdir}/publication"
   },
   "style": {
     "font_family": ["Arial", "Helvetica", "DejaVu Sans"],
@@ -12,7 +13,7 @@
   },
   "singlecell": {
     "label": "HeLa",
-    "sample_meta_file": "/path/to/single_cell/sample_meta_hela.csv",
+    "sample_meta_file": "${sample_meta}",
     "levels": {
       "precursor": {
         "id_col": "Precursor.Id",

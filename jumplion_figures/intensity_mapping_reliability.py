@@ -45,16 +45,17 @@ def _bool(s):
     return s.fillna(False).astype(str).str.lower().isin(["true","1","yes","y"])
 
 
-def _import_production(module_name="intensity_mapping", module_dir=None):
+def _import_production(module_name="jumplion.intensity_mapping", module_dir=None):
+    """The production mapping module: by default the one shipped with the installed `jumplion` package
+    (pip install jumplion), so the reliability analysis tests exactly the released code."""
     if module_dir:
         sys.path.insert(0, str(Path(module_dir).resolve()))
     try:
         return importlib.import_module(module_name)
-    except ModuleNotFoundError:
-        # module_name is a bare name (e.g. "intensity_mapping") but the production module
-        # actually lives inside the jumplion_figures package, not on sys.path / module_dir.
-        if "." not in module_name:
-            return importlib.import_module(f"jumplion_figures.{module_name}")
+    except ModuleNotFoundError as e:
+        if e.name and module_name.startswith(e.name):
+            raise ModuleNotFoundError(f"cannot import '{module_name}': install JUMPlion into this environment "
+                                      "(pip install jumplion, Python 3.12+)") from e
         raise
 
 
@@ -159,7 +160,7 @@ def _actual_recoveries(diann, jump, metrics, runs, species, quantification_parqu
 
 def run_reliability(quantity_diann, quantity_jumplion, mapping_metrics, output_dir,
                     species_annotation=None, quantification_parquet=None,
-                    production_module="intensity_mapping", production_module_dir=None,
+                    production_module="jumplion.intensity_mapping", production_module_dir=None,
                     min_slope=.5, max_slope=1.5, max_mae=.4, max_extrapolation_log2=2.0,
                     fit_tolerance=1e-8, require_production_match=True):
     """Run unified reliability analysis and return all result DataFrames."""
@@ -355,7 +356,7 @@ def run_reliability(quantity_diann, quantity_jumplion, mapping_metrics, output_d
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--quantity-diann",required=True); ap.add_argument("--quantity-jumplion",required=True); ap.add_argument("--mapping-metrics",required=True); ap.add_argument("--output-dir",required=True)
-    ap.add_argument("--species-annotation"); ap.add_argument("--quantification-parquet"); ap.add_argument("--production-module",default="intensity_mapping"); ap.add_argument("--production-module-dir")
+    ap.add_argument("--species-annotation"); ap.add_argument("--quantification-parquet"); ap.add_argument("--production-module",default="jumplion.intensity_mapping"); ap.add_argument("--production-module-dir")
     args=ap.parse_args(); run_reliability(args.quantity_diann,args.quantity_jumplion,args.mapping_metrics,args.output_dir,args.species_annotation,args.quantification_parquet,args.production_module,args.production_module_dir)
 
 if __name__=="__main__": main()

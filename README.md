@@ -6,7 +6,7 @@ datasets (HeLa, PBMC). One visual style (`jumplion_figures/style.py`) for everyt
 
 ## Installation
 
-This is a set of scripts, not an installable package: clone it and run `make_figures.py` from the cloned folder. There is no `pip install .` step, and the JUMPlion tool itself is not needed, only its output tables.
+This is a set of scripts, not an installable package: clone it and run `make_figures.py` from the cloned folder. There is no `pip install .` step. It reads the output tables of JUMPlion runs, and imports the released `jumplion` package for its intensity-mapping module (installed by `requirements.txt`).
 
 ```
 git clone https://github.com/yingxue-fu/jumplion_figures.git
@@ -21,7 +21,7 @@ The `pip install` runs inside the conda environment and installs everything in `
 
 Instead of `git clone` you can download the ZIP from GitHub (Code → Download ZIP) and unzip it anywhere; the rest is the same. Keep the folders (`configs/`, `jumplion_figures/`, `r_scripts/`) next to `make_figures.py`, since it finds them by their location: copying single scripts out will not work.
 
-- **Python**: 3.9 or newer (developed with 3.12). `requirements.txt` has numpy, pandas, scipy, matplotlib, pyarrow; statsmodels, seaborn and biopython for `differential_expression`; scanpy, anndata, scikit-learn and python-igraph (or leidenalg) for the PBMC step. `umap-learn` is optional.
+- **Python**: 3.12 or newer (required by `jumplion`). `requirements.txt` has numpy, pandas, scipy, matplotlib, pyarrow, and `jumplion` (the release, for `jumplion.intensity_mapping`); statsmodels, seaborn and biopython for `differential_expression`; scanpy, anndata, scikit-learn and python-igraph (or leidenalg) for the PBMC step. `umap-learn` is optional.
 - **R** (only for the opt-in `imputation_comparison` target): R (developed with 4.4.3); then `Rscript r_scripts/install_packages.R` installs impute, missForest, imputeLCMD, data.table, ggplot2, patchwork and the rest (on a cluster or other shared R whose library is read-only, it installs into your personal library, `R_LIBS_USER`, instead).
 
 ### Fonts
@@ -41,12 +41,14 @@ After installing, edit the config of each target you want to run. The paths in `
 | `singlecell_hela` / `singlecell_pbmc` | `configs/singlecell_hela.json` / `configs/singlecell_pbmc.json` |
 | `imputation_comparison` | `configs/hye_genbeta_protein.json` (also holds its `imputation_comparison` block) |
 
-In each config, set:
+Every path you may need to change is at the top of each config: `output_dir` and the `paths` block. The rest of the file refers to them as `${name}`, so nothing further down needs editing.
 
-- `paths.run_dir` (for `hye_genbeta`, the `run_dir` of each entry under `datasets`): the JUMPlion run folder. The other paths are built from it with `${run_dir}`, so usually this is the only path that changes.
-- `sample_meta_file`: your sample-meta CSV.
-- `fasta_files`: your FASTA file(s) (differential expression).
-- `output_dir` (optional): where the figures and tables are written.
+- `paths.jumplion_outdir` (`hye_wang`, single-cell) or `paths.data_root` (`hye_genbeta`, the folder holding the dataset folders `ultra_5m`, `astral_15m`, ...): the JUMPlion output folder, i.e. the `out_dir` you gave JUMPlion, which contains `publication/` and `intermediate/`. For `hye_genbeta`, `data_root` holds one such folder per dataset (each dataset's `jumplion_outdir`). `pub_dir` and `inter_dir` are `${jumplion_outdir}/publication` and `${jumplion_outdir}/intermediate`.
+- `paths.sample_meta` (`hye_genbeta`: `sample_meta_file` of each entry under `datasets`, built from `data_root`): your sample-meta CSV.
+- `paths.fasta`: your FASTA file (differential expression; `hye_wang`, `hye_genbeta_precursor`).
+- `paths.precursor_table_dir` (`hye_genbeta_protein`): the precursor run's `generalization/table`.
+- `paths.spectral_library` (`hye_wang`, only needed when the RT cross-validation tables are missing and must be regenerated, see `mechanism.rt_cv_regenerate`).
+- `output_dir`: where the figures and tables are written.
 - `imputation_comparison.rscript` (optional): path to `Rscript`, if it is not on your PATH.
 
 Start with one target (for example `python make_figures.py hye_wang`) before running everything: a plain `python make_figures.py` runs all default targets and so needs all of their configs filled in. Every setting is described under [Config](#config).
@@ -110,7 +112,6 @@ jumplion_figures/
   performance.py               HYE benchmark: coverage, completeness, sensitivity/FDR, CV/dFC, examples
   generalization.py            multi-dataset version of performance (precursor and protein level)
   mechanism.py                 localization-tier recovery, intensity mapping, final recovered
-  intensity_mapping.py         production intensity-mapping model (loaded by the reliability module)
   intensity_mapping_reliability.py   mapping-reliability analysis used by mechanism
   singlecell.py                single-cell panels shared by HeLa and PBMC (HeLa integrated figure)
   singlecell_scanpy.py         PBMC protein-level clustering, markers, integrated figure
@@ -236,8 +237,8 @@ For example, `--stages compare plots` rebuilds the tables and figures without re
   one, a star) or `contrasts` (explicit `[["A","B"],["B","C"]]` pairs). `contrasts` wins if both are
   given; `performance` supports only `reference`. `padj_cutoff` sets significance; no log2FC
   cutoff is applied in `generalization` (the sign of log2FC only separates TP from wrong direction).
-* `datasets` (optional): `{name: {"run_dir", "sample_meta_file", "gradient"}}` runs every stage once
-  per dataset; each `run_dir` replaces `${run_dir}` in its own copy of the config.
+* `datasets` (optional): `{name: {"jumplion_outdir", "sample_meta_file", "gradient"}}` runs every stage once
+  per dataset; each `jumplion_outdir` (that dataset's JUMPlion output folder) replaces `${jumplion_outdir}` in its own copy of the config.
 * `differential_expression.matrices.<role>`: `{"name", "file"}`, or nested `normalized`/`raw` pairs
   (give them different `name`s so their outputs do not overwrite each other).
 * `generalization.id_col` / `precursor_table_dir`: switch a run to protein level and point it at the
@@ -246,6 +247,14 @@ For example, `--stages compare plots` rebuilds the tables and figures without re
   `Fig_Mechanism_B_signal_rank_coelution_{recovered,all}` are written to `mechanism/main` (2nd-4th groups =
   finally recovered precursor-runs, or every JUMPlion entry of the three recovery tiers); this setting
   picks which one goes into the integrated figure. "DIA-NN reported" is unfiltered in both.
+* `mechanism.rt_cv_regenerate`: `{"rt_matrix", "library", "min_run_fraction", "output_dir"}`. The RT
+  cross-validation tables (`rt_error_histogram`, `rt_representative_run`) exist only if the JUMPlion run had the
+  validation on. When they are missing, `mechanism` reruns JUMPlion's own cross-validation
+  (`jumplion.coordinate_validation.run_rt_prediction`, `run_validation=True`, production settings) and uses the
+  result. `rt_matrix` is the run's `intermediate/rt_prediction/rt_mat_before_prediction.tsv` (written when the
+  run saved supplements), `library` the spectral-library parquet the run used, `min_run_fraction` the run's
+  `min_runs_model_frac` (default 0.5). Output goes to `output_dir` (default: a `regenerated` folder next to the
+  expected histogram), never over the production files.
 * `singlecell`: `label`, `sample_meta_file`, `levels.<precursor|protein>.{id_col, matrices}`,
   `group_col`, `cv_min_cells`, `embedding`, `skip_analyses`, `markers`, `violin_markers(_main)`,
   `marker_labels`. `scanpy` (PBMC): `min_cell_frac`, `n_pcs`, `n_neighbors`, `resolution`, `seed`.

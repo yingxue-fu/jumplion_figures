@@ -1,28 +1,15 @@
 {
-  "output_dir": "/path/to/gen_beta/analyses4",  "datasets": {
-    "ultra_5m": {
-      "run_dir": "/path/to/gen_beta/ultra_5m",
-      "sample_meta_file": "/path/to/gen_beta/sample_meta_ultra_5m.csv",
-      "gradient": "5m"
-    },
-    "ultra_15m": {
-      "run_dir": "/path/to/gen_beta/ultra_15m",
-      "sample_meta_file": "/path/to/gen_beta/sample_meta_ultra_15m.csv",
-      "gradient": "15m"
-    },
-    "astral_5m": {
-      "run_dir": "/path/to/gen_beta/astral_5m",
-      "sample_meta_file": "/path/to/gen_beta/sample_meta_astral_5m.csv",
-      "gradient": "5m"
-    },
-    "astral_15m": {
-      "run_dir": "/path/to/gen_beta/astral_15m",
-      "sample_meta_file": "/path/to/gen_beta/sample_meta_astral_15m.csv",
-      "gradient": "15m"
-    }
-  },
+  "output_dir": "${data_root}/analyses4",
   "paths": {
-    "pub_dir": "${run_dir}/publication"
+    "data_root": "/path/to/gen_beta",
+    "fasta": "/path/to/HYE_mix.fasta",
+    "pub_dir": "${jumplion_outdir}/publication"
+  },
+  "datasets": {
+    "ultra_5m":   {"jumplion_outdir": "${data_root}/ultra_5m",   "sample_meta_file": "${data_root}/sample_meta_ultra_5m.csv",   "gradient": "5m"},
+    "ultra_15m":  {"jumplion_outdir": "${data_root}/ultra_15m",  "sample_meta_file": "${data_root}/sample_meta_ultra_15m.csv",  "gradient": "15m"},
+    "astral_5m":  {"jumplion_outdir": "${data_root}/astral_5m",  "sample_meta_file": "${data_root}/sample_meta_astral_5m.csv",  "gradient": "5m"},
+    "astral_15m": {"jumplion_outdir": "${data_root}/astral_15m", "sample_meta_file": "${data_root}/sample_meta_astral_15m.csv", "gradient": "15m"}
   },
   "run": ["differential_expression", "generalization"],
   "style": {
@@ -52,7 +39,7 @@
         "raw": {"name": "diann_jumplion_raw", "file": "${pub_dir}/prec_matrix_diann_jumplion.tsv"}
       }
     },
-    "fasta_files": ["/path/to/HYE_mix.fasta"],
+    "fasta_files": ["${fasta}"],
     "mat_type": "Precursor.Id",
     "mat_sep": "\t",
     "log_transform_input": true,

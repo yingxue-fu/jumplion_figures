@@ -587,6 +587,39 @@ def _coarsen_bins(x, count, target_bins):
     return x_c, count_c
 
 
+def _ensure_rt_cross_validation(cfg, resolve):
+    """Return (error_histogram_path, representative_run_path), running JUMPlion's RT cross-validation
+    first when those files are missing (production runs turn the validation off).
+
+    The cross-validation is JUMPlion's own code (jumplion.coordinate_validation.run_rt_prediction with
+    run_validation=True), run with the production settings on the saved pre-prediction RT matrix and the
+    library RTs. `mechanism.rt_cv_regenerate` = {"rt_matrix", "library", "min_run_fraction", "output_dir"};
+    results go to output_dir (default: <rt_error_histogram's folder>/regenerated), not over production files."""
+    hist_p, rep_p = resolve(cfg.get("rt_error_histogram")), resolve(cfg.get("rt_representative_run"))
+    if hist_p is None or rep_p is None or (Path(hist_p).exists() and Path(rep_p).exists()):
+        return hist_p, rep_p
+    rg = cfg.get("rt_cv_regenerate") or {}
+    rt_matrix, library = resolve(rg.get("rt_matrix")), resolve(rg.get("library"))
+    if rt_matrix is None or library is None:
+        raise FileNotFoundError(
+            f"{hist_p} is missing (RT cross-validation was off in the JUMPlion run). Set mechanism.rt_cv_regenerate "
+            '= {"rt_matrix": ".../rt_prediction/rt_mat_before_prediction.tsv", "library": "<spectral library parquet>"} '
+            "to rerun it here.")
+    from jumplion.calibration import calc_spline_vectorized, refine_spline
+    from jumplion.coordinate_validation import ModelConfig, run_rt_prediction
+
+    out_dir = Path(resolve(rg.get("output_dir")) or Path(hist_p).parent / "regenerated")
+    log.info("RT cross-validation files not found; running it on %s (output: %s)", rt_matrix, out_dir)
+    rt_mat = pd.read_csv(rt_matrix, sep="\t", index_col=0)
+    lib = pd.read_parquet(library, columns=["Precursor.Id", "RT"]).drop_duplicates("Precursor.Id")
+    mcfg = ModelConfig(coordinate_label="RT", max_segments=30, min_run_fraction=float(rg.get("min_run_fraction", 0.5)),
+                       adjustment_mode="clip")  # as JUMPlion's production RT prediction
+    run_rt_prediction(rt_mat=rt_mat, lib_df_uniq_prec=lib, refine_spline_fn=refine_spline,
+                      calc_spline_vectorized_fn=calc_spline_vectorized, out_dir=out_dir, config=mcfg,
+                      run_validation=True, save_plots=False)
+    return out_dir / Path(hist_p).name, out_dir / Path(rep_p).name
+
+
 def panel_pre_extraction_rt_validation(hist, rep, half_window, L, sv, cycle_time=None):
     if hist is None or rep is None or half_window is None:
         return
@@ -1651,7 +1684,7 @@ def _run_mapping_reliability(cfg, L, sv, resolve, comp):
         output_dir=reliability_out,
         species_annotation=resolve(cfg["species_annotation"]),
         quantification_parquet=resolve(cfg["quantification_parquet"]),
-        production_module=cfg.get("production_module", "intensity_mapping"),
+        production_module=cfg.get("production_module", "jumplion.intensity_mapping"),
         production_module_dir=resolve(cfg["production_module_dir"]) if cfg.get("production_module_dir") else None,
         min_slope=MIN_SLOPE, max_slope=MAX_SLOPE, max_mae=MAX_MAE,
         max_extrapolation_log2=MAX_EXTRAPOLATION,
@@ -2219,8 +2252,9 @@ def run(cfg, L, saver, resolve):
     # ---- signal-recovery mechanism (Supp) ----
     before_counts_df = panel_tier_frequencies(evidence, L, sv, universe)
 
-    hist = read_table(resolve(cfg.get("rt_error_histogram")))
-    rep = read_table(resolve(cfg.get("rt_representative_run")))
+    hist_path, rep_path = _ensure_rt_cross_validation(cfg, resolve)
+    hist = read_table(hist_path)
+    rep = read_table(rep_path)
     panel_pre_extraction_rt_validation(hist, rep, cfg.get("rt_extraction_half_window"), L, sv,
                                        cycle_time=cfg.get("cycle_time"))
     panel_rt_refinement_by_rt(evidence, L, sv)

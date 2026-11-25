@@ -51,10 +51,10 @@ def substitute_config(cfg, path_overrides=None, strict=True):
 
     `path_overrides` lets a caller run the same raw config through substitution more than once
     with different "paths" values -- e.g. one pass per dataset when "datasets" supplies a
-    different run_dir each time (see make_figures.py's per-dataset loop).
+    different jumplion_outdir each time (see make_figures.py's per-dataset loop).
 
     `strict=False` leaves an undefined ${name} as-is instead of raising -- for a "base" pass over
-    a config whose "datasets" block supplies run_dir (and so ${run_dir}-derived paths) per
+    a config whose "datasets" block supplies jumplion_outdir (and so ${jumplion_outdir}-derived paths) per
     dataset rather than at the top level: that pass only needs the handful of truly top-level
     keys (style, output_dir, run), so it shouldn't fail just because dataset-scoped variables
     aren't defined yet.
@@ -63,7 +63,7 @@ def substitute_config(cfg, path_overrides=None, strict=True):
     if path_overrides:
         cfg.setdefault("paths", {}).update(path_overrides)
     variables = {k: str(v) for k, v in cfg.get("paths", {}).items()}
-    for _ in range(10):  # resolve nested references like "${run_dir}/publication"
+    for _ in range(10):  # resolve nested references like "${jumplion_outdir}/publication"
         new = {k: _substitute(v, variables, strict) for k, v in variables.items()}
         if new == variables:
             break
