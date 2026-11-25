@@ -1184,7 +1184,7 @@ def generate_replicate_examples(cfg, resolve, prepared, restored, L, sv):
                            completeness_label=lab, show_xticklabels=False)
         plot_example_method(axs[row, 1], mj, pid, group_cols, comp, M_J, js, jstate, stat_fontsize=4.5,
                            other_matrix=md, completeness_label=jlabel, show_xticklabels=False)
-        axs[row, 0].set_ylabel("log2 intensity")
+        axs[row, 0].set_ylabel("log$_2$ intensity")
         axs[row, 0].set_title(f"{pid} ({S.species_label(row_data.Species)}), {S.clabel(main_c)}",
                               loc="left", fontsize=5)
     compact_axes(*axs.ravel())
@@ -1240,7 +1240,7 @@ def generate_replicate_examples(cfg, resolve, prepared, restored, L, sv):
                 axD.set_ylim(ymin - pad, ymax + pad); axJ.set_ylim(ymin - pad, ymax + pad)
             axJ.tick_params(axis="y", labelleft=False)
             if ci == 0:
-                axD.set_ylabel("log2 intensity", fontsize=6.5)
+                axD.set_ylabel("log$_2$ intensity", fontsize=6.5)
             # Same title CONTENT/style as Main C's own axs[row, 0].set_title(...) -- pid, species,
             # contrast, left-aligned, fontsize=5 -- but still placed via ax.text (not set_title)
             # at this same tuned offset: unlike Main C, this panel also carries its own per-column

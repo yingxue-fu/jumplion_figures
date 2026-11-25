@@ -12,16 +12,37 @@ This is a set of scripts, not an installable package: clone it and run `make_fig
 git clone https://github.com/yingxue-fu/jumplion_figures.git
 cd jumplion_figures
 
-python -m venv .venv                      # optional, recommended
-.venv\Scripts\activate                    # Windows (macOS/Linux: source .venv/bin/activate)
+conda create -n jumplion_figures python=3.12
+conda activate jumplion_figures
 pip install -r requirements.txt
 ```
+
+The `pip install` runs inside the conda environment and installs everything in `requirements.txt`. To get R for the opt-in `imputation_comparison` target in the same environment, add it with `conda install -n jumplion_figures -c conda-forge r-base=4.4`; an R already installed on your machine works too.
 
 Instead of `git clone` you can download the ZIP from GitHub (Code → Download ZIP) and unzip it anywhere; the rest is the same. Keep the folders (`configs/`, `jumplion_figures/`, `r_scripts/`) next to `make_figures.py`, since it finds them by their location: copying single scripts out will not work.
 
 - **Python**: 3.9 or newer (developed with 3.12). `requirements.txt` has numpy, pandas, scipy, matplotlib, pyarrow; statsmodels, seaborn and biopython for `differential_expression`; scanpy, anndata, scikit-learn and python-igraph (or leidenalg) for the PBMC step. `umap-learn` is optional.
 - **R** (only for the opt-in `imputation_comparison` target): R (developed with 4.4.3); then `Rscript r_scripts/install_packages.R` installs impute, missForest, imputeLCMD, data.table, ggplot2, patchwork and the rest. The figures use the Arial font, which needs to be installed on the machine.
-- **Your data**: the paths in `configs/*.json` are placeholders (`/path/to/...`). Replace them with the locations of your own DIA-NN / JUMPlion tables and sample-meta files before running (see Quick start and the table below for what each target needs).
+### Set up your configs
+
+After installing, edit the config of each target you want to run. The paths in `configs/*.json` are placeholders (`/path/to/...`), so nothing runs until you replace them with the locations of your own DIA-NN / JUMPlion tables.
+
+| Target | Config(s) to edit |
+|---|---|
+| `hye_wang` | `configs/hye_wang.json` |
+| `hye_genbeta` | `configs/hye_genbeta_precursor.json` and `configs/hye_genbeta_protein.json` |
+| `singlecell_hela` / `singlecell_pbmc` | `configs/singlecell_hela.json` / `configs/singlecell_pbmc.json` |
+| `imputation_comparison` | `configs/hye_genbeta_protein.json` (also holds its `imputation_comparison` block) |
+
+In each config, set:
+
+- `paths.run_dir` (for `hye_genbeta`, the `run_dir` of each entry under `datasets`): the JUMPlion run folder. The other paths are built from it with `${run_dir}`, so usually this is the only path that changes.
+- `sample_meta_file`: your sample-meta CSV.
+- `fasta_files`: your FASTA file(s) (differential expression).
+- `output_dir` (optional): where the figures and tables are written.
+- `imputation_comparison.rscript` (optional): path to `Rscript`, if it is not on your PATH.
+
+Start with one target (for example `python make_figures.py hye_wang`) before running everything: a plain `python make_figures.py` runs all default targets and so needs all of their configs filled in. Every setting is described under [Config](#config).
 
 ## Quick start
 
@@ -35,7 +56,12 @@ python make_figures.py hye_wang --stages mechanism      # one stage of a pipelin
 python make_figures.py singlecell_hela --output-dir D:/out
 python make_figures.py imputation_comparison            # opt-in, never part of the default run (needs R)
 python make_figures.py imputation_comparison --stages plots   # redraw its figures only
+python make_figures.py hye_wang --log-file D:/out/run.log     # choose where the log goes
 ```
+
+`python make_figures.py --version` prints the version (set in `jumplion_figures/__init__.py`; also recorded in the log header).
+
+Every run writes a log of the whole process (the console output of each step, including the R scripts, plus the commands run and start/finish times) to `logs/make_figures_<timestamp>.log` next to `make_figures.py`. Use `--log-file PATH` to put it elsewhere, or `--no-log` to turn it off.
 
 | Target | Config | Produces | Needs |
 |---|---|---|---|

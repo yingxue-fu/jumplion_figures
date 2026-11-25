@@ -339,9 +339,9 @@ def panel_paired_cv(p, bins, summ, min_cells, label, MAIN, sv, level="precursor"
     ax.plot([0, lim], [0, lim], color=S.REF_LINE, linewidth=.6, linestyle="--")
     from scipy import stats
     r, pval = stats.pearsonr(p.cv_diann[ok], p.cv_jumplion[ok])  # Pearson r on the plotted features
-    p_txt = "p < 1e-300" if pval < 1e-300 else (f"p = {pval:.1e}" if pval < .001 else f"p = {pval:.3f}")
+    # p_txt = "p < 1e-300" if pval < 1e-300 else (f"p = {pval:.1e}" if pval < .001 else f"p = {pval:.3f}")
     ax.set_xlim(0, lim); ax.set_ylim(0, lim)
-    ax.text(.97, .03, f"r = {r:.4f}\n{p_txt}", transform=ax.transAxes, ha="right", va="bottom", fontsize=FS)
+    ax.text(.97, .03, f"r = {r:.4f}", transform=ax.transAxes, ha="right", va="bottom", fontsize=FS) # \n{p_txt}
     ax.set_title(f"n = {int(ok.sum()):,} {noun}s", fontsize=FS, pad=2)
     ax.set_xlabel("CV, DIA-NN (%)"); ax.set_ylabel("CV, JUMPlion (%)")
     compact_axes(*fig.axes)  # benchmark tick/axis-label sizes (performance.compact_axes)

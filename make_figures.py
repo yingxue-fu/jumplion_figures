@@ -32,9 +32,12 @@ import os
 import shutil
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from jumplion_figures import __version__  # noqa: E402  (single source: jumplion_figures/__init__.py)
 CONFIGS = HERE / "configs"
 
 PIPELINE = "pipeline"
@@ -60,6 +63,33 @@ SINGLECELL_CODE = {
                         "rc = singlecell.main({cfg!r}, sys.argv[1:]); "
                         "sys.exit(singlecell_scanpy.main({cfg!r}, sys.argv[1:]) or rc)"),
 }
+
+
+_LOG = None  # open log file, set in main()
+
+
+def say(msg=""):
+    """print() to the console and, when logging, to the log file."""
+    print(msg, flush=True)
+    if _LOG:
+        _LOG.write(msg + "\n")
+        _LOG.flush()
+
+
+def run(cmd):
+    """Run a command in HERE, streaming its output (stdout+stderr) to the console and the log file."""
+    env = {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONIOENCODING": "utf-8"}
+    if _LOG is None:
+        return subprocess.call(cmd, cwd=HERE, env=env)
+    _LOG.write("$ " + " ".join(str(c) for c in cmd) + "\n")
+    proc = subprocess.Popen(cmd, cwd=HERE, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, encoding="utf-8", errors="replace")
+    for line in proc.stdout:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        _LOG.write(line)
+        _LOG.flush()
+    return proc.wait()
 
 
 def find_rscript(configured):
@@ -121,6 +151,10 @@ def main(argv=None):
                     help="stages to run: pipeline targets take " + ", ".join(STAGES) + "; imputation_comparison takes "
                     + ", ".join(IMPUTATION_STAGES) + ". A target none of the chosen stages apply to is skipped")
     ap.add_argument("--output-dir", help="override output_dir from the config(s)")
+    ap.add_argument("--log-file", help="write the console output of every step to this file "
+                    "(default: logs/make_figures_<timestamp>.log next to this script)")
+    ap.add_argument("--no-log", action="store_true", help="do not write a log file")
+    ap.add_argument("--version", action="version", version=f"jumplion_figures {__version__}")
     args = ap.parse_args(argv)
 
     bad = [t for t in args.targets if t not in TARGETS]
@@ -128,45 +162,63 @@ def main(argv=None):
         ap.error(f"unknown target(s) {bad}; choose from {list(TARGETS)}")
     chosen = [t for t in TARGETS if (t in args.targets if args.targets else t not in OPT_IN) and t not in args.skip]
 
+    global _LOG
+    if not args.no_log:
+        log_path = Path(args.log_file) if args.log_file else HERE / "logs" / f"make_figures_{datetime.now():%Y%m%d_%H%M%S}.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        _LOG = open(log_path, "w", encoding="utf-8")
+        _LOG.write(f"# jumplion_figures {__version__}\n# make_figures.py {' '.join(sys.argv[1:])}\n"
+                   f"# started {datetime.now():%Y-%m-%d %H:%M:%S}  python {sys.version.split()[0]}\n")
+        print(f"log file: {log_path}", flush=True)
+    try:
+        return _run(args, chosen)
+    finally:
+        if _LOG:
+            _LOG.write(f"# finished {datetime.now():%Y-%m-%d %H:%M:%S}\n")
+            _LOG.close()
+            _LOG = None
+
+
+def _run(args, chosen):
     results = {}
     for target in chosen:
-        print(f"\n==== {target} ====", flush=True)
+        say(f"\n==== {target} ====")
         rcs = []
         if target == "imputation_comparison":
             stages = [s for s in args.stages or [] if s in IMPUTATION_STAGES]
             if args.stages and not stages:
-                print("-- skipped (no imputation_comparison stage chosen)", flush=True)
+                say("-- skipped (no imputation_comparison stage chosen)")
             else:
                 try:
                     for label, cmd in imputation_commands(args.output_dir, stages):
-                        print(f"-- {label}", flush=True)
-                        rc = subprocess.call(cmd, cwd=HERE)
+                        say(f"-- {label}")
+                        rc = run(cmd)
                         rcs.append(rc)
                         if rc:  # later steps read this one's outputs
                             break
                 except FileNotFoundError as e:
-                    print(f"   {e}", flush=True)
+                    say(f"   {e}")
                     rcs.append(1)
             results[target] = max(rcs, default=0)
             continue
         for kind, cfg_name in TARGETS[target]:
             stages = [s for s in args.stages or [] if s in STAGES] if kind == PIPELINE else None
             if kind == PIPELINE and args.stages and not stages:
-                print(f"-- {cfg_name}: skipped (no pipeline stage chosen)", flush=True)
+                say(f"-- {cfg_name}: skipped (no pipeline stage chosen)")
                 continue
-            print(f"-- {cfg_name}", flush=True)
-            rcs.append(subprocess.call(command(target, kind, cfg_name, args.output_dir, stages), cwd=HERE))
+            say(f"-- {cfg_name}")
+            rcs.append(run(command(target, kind, cfg_name, args.output_dir, stages)))
         results[target] = max(rcs, default=0)
     # Supp_Benchmark_design stacks panels from both HYE runs, so it follows whenever both ran.
     if {"hye_wang", "hye_genbeta"} <= set(chosen) and not args.stages:
-        print("\n==== benchmark design (hye_wang + hye_genbeta) ====", flush=True)
+        say("\n==== benchmark design (hye_wang + hye_genbeta) ====")
         extra = ["--output-dir", args.output_dir] if args.output_dir else []
-        results["benchmark_design"] = subprocess.call(
+        results["benchmark_design"] = run(
             [sys.executable, "-m", "jumplion_figures.design_figure", "--top", str(CONFIGS / "hye_wang.json"),
-             "--bottom", str(CONFIGS / "hye_genbeta_protein.json"), *extra], cwd=HERE)
-    print("\nSummary")
+             "--bottom", str(CONFIGS / "hye_genbeta_protein.json"), *extra])
+    say("\nSummary")
     for target, rc in results.items():
-        print(f"  {target:<24} {'ok' if rc == 0 else f'FAILED (exit {rc})'}")
+        say(f"  {target:<24} {'ok' if rc == 0 else f'FAILED (exit {rc})'}")
     return 0 if all(rc == 0 for rc in results.values()) else 1
 
 
