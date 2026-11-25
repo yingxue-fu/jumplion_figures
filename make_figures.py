@@ -190,7 +190,7 @@ def main(argv=None):
                    f"# started {datetime.now():%Y-%m-%d %H:%M:%S}  python {sys.version.split()[0]}\n")
         print(f"log file: {log_path}", flush=True)
     try:
-        return _run(args, chosen)
+        return _run(args, chosen, cfg_override)
     finally:
         if _LOG:
             _LOG.write(f"# finished {datetime.now():%Y-%m-%d %H:%M:%S}\n")
@@ -198,7 +198,7 @@ def main(argv=None):
             _LOG = None
 
 
-def _run(args, chosen):
+def _run(args, chosen, cfg_override):
     results = {}
     for target in chosen:
         say(f"\n==== {target} ====")
