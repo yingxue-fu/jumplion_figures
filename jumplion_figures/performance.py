@@ -172,7 +172,7 @@ def benchmark_design_table(fig, rect, contrasts):
     signed = lambda v: f"{v:+.2f}".replace("-", "−")
     cols_x = [0.0, 0.50, 0.90]
     cols_ha = ["left", "right", "right"]
-    header = ["Contrast", "Yeast log2FC", "E. coli log2FC"]
+    header = ["Contrast", "Yeast log$_2$FC", "E. coli log$_2$FC"]
     n_rows = len(contrasts) + 1
     ys = np.linspace(1, 0, n_rows + 1)[:-1] - .5 / n_rows
     for x_, ha_, txt in zip(cols_x, cols_ha, header):
@@ -1153,10 +1153,15 @@ def generate_replicate_examples(cfg, resolve, prepared, restored, L, sv):
     main_c = cfg.get("example_contrast", "S4_vs_S1")
     if main_c not in prepared:
         main_c = list(prepared)[-1]
-    nt_pool = ntc[ntc.contrast == main_c]
-    fn_pool = fnc[fnc.contrast == main_c]
+    # Species of each row: top (Partially complete) E. coli, bottom (Insufficient, restored) yeast;
+    # performance.example_species_partial / example_species_restored override them.
+    sp_fn = str(cfg.get("example_species_partial", "ECOLI")).upper()
+    sp_nt = str(cfg.get("example_species_restored", "YEAST")).upper()
+    nt_pool = ntc[(ntc.contrast == main_c) & (ntc.Species == sp_nt)]
+    fn_pool = fnc[(fnc.contrast == main_c) & (fnc.Species == sp_fn)]
     if nt_pool.empty or fn_pool.empty:
-        raise ValueError(f"No example candidates for {main_c}.")
+        raise ValueError(f"No example candidates for {main_c} "
+                         f"(Partially complete {sp_fn}: {len(fn_pool)}, restored {sp_nt}: {len(nt_pool)}).")
     nt_pref = nt_pool[(nt_pool.nD_S1 >= 1) & (nt_pool.nD_other >= 1)]
     nt_row = (nt_pref if len(nt_pref) else nt_pool).sort_values("score").iloc[0]
     fn_row = fn_pool.sort_values("score").iloc[0]
