@@ -63,6 +63,8 @@ python make_figures.py hye_wang hye_genbeta
 python make_figures.py --skip singlecell_pbmc
 python make_figures.py hye_wang --stages mechanism      # one stage of a pipeline target
 python make_figures.py singlecell_hela --output-dir D:/out
+python make_figures.py hye_wang --config my_configs/hye_wang.json   # your own copy of a config (one target)
+python make_figures.py hye_genbeta --config my_prec.json my_prot.json   # two configs, run in order: precursor, then protein
 python make_figures.py imputation_comparison            # opt-in, never part of the default run (needs R)
 python make_figures.py imputation_comparison --stages plots   # redraw its figures only
 python make_figures.py hye_wang --log-file D:/out/run.log     # choose where the log goes

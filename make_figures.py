@@ -5,6 +5,8 @@
     python make_figures.py hye_wang hye_genbeta
     python make_figures.py hye_wang --stages mechanism      # only one stage of a pipeline target
     python make_figures.py singlecell_pbmc --output-dir D:/out
+    python make_figures.py hye_wang --config my_configs/hye_wang_other.json   # a copy of the config
+    python make_figures.py hye_genbeta --config my_prec.json my_prot.json   # precursor config, then protein config
 
 Targets (run in this order; each step in its own Python process):
     hye_wang          HYE benchmark: differential_expression, performance, mechanism
@@ -21,8 +23,8 @@ Targets (run in this order; each step in its own Python process):
 
 --stages limits a target to some of its stages. hye_wang / hye_genbeta: differential_expression, generalization,
 performance, mechanism; imputation_comparison: impute, compare, plots. A target with none of the chosen stages is skipped. --output-dir overrides each
-config's output_dir. For the remaining options (--normalization, --fail-fast, a custom config) run
-the pipeline directly:  python -m jumplion_figures.pipeline --config <json> [options]
+config's output_dir. --config JSON [JSON] swaps in your own config file(s), one per step of the single target you name. For the
+remaining options (--normalization, --fail-fast) run the pipeline directly:  python -m jumplion_figures.pipeline --config <json> [options]
 
 A failing target is reported and the others still run; the exit code is non-zero if any failed.
 """
@@ -105,13 +107,13 @@ def find_rscript(configured):
                             f"configs/{IMPUTATION_CONFIG}, or the RSCRIPT environment variable")
 
 
-def imputation_commands(output_dir, stages):
+def imputation_commands(output_dir, stages, config=None):
     """Ordered (label, command) list for the imputation_comparison target: the R scripts next to this file.
 
     Settings come from the imputation_comparison block of the protein-level generalization config; the
     dataset names and the gen_beta root (the parent of each jumplion_outdir) from the same config."""
     # ${name} in the paths are expanded from the config's "paths" block (jumplion_outdir itself is per dataset, so lenient)
-    cfg = substitute_config(json.loads((CONFIGS / IMPUTATION_CONFIG).read_text(encoding="utf-8")), strict=False)
+    cfg = substitute_config(json.loads((Path(config) if config else CONFIGS / IMPUTATION_CONFIG).read_text(encoding="utf-8")), strict=False)
     opts = cfg.get("imputation_comparison", {})
     datasets = list(cfg["datasets"])
     root = Path(cfg["datasets"][datasets[0]]["jumplion_outdir"]).parent
@@ -153,6 +155,9 @@ def main(argv=None):
                     help="stages to run: pipeline targets take " + ", ".join(STAGES) + "; imputation_comparison takes "
                     + ", ".join(IMPUTATION_STAGES) + ". A target none of the chosen stages apply to is skipped")
     ap.add_argument("--output-dir", help="override output_dir from the config(s)")
+    ap.add_argument("--config", nargs="+", metavar="JSON", help="use these config files instead of the target's own, one per step "
+                    "in the target's order (one target only): 1 file for hye_wang, singlecell_*, imputation_comparison; "
+                    "2 for hye_genbeta (precursor, then protein)")
     ap.add_argument("--log-file", help="write the console output of every step to this file "
                     "(default: logs/make_figures_<timestamp>.log next to this script)")
     ap.add_argument("--no-log", action="store_true", help="do not write a log file")
@@ -163,6 +168,18 @@ def main(argv=None):
     if bad:
         ap.error(f"unknown target(s) {bad}; choose from {list(TARGETS)}")
     chosen = [t for t in TARGETS if (t in args.targets if args.targets else t not in OPT_IN) and t not in args.skip]
+    cfg_override = None
+    if args.config:
+        cfg_override = [Path(c).resolve() for c in args.config]  # steps run with cwd=HERE, so make them absolute now
+        for given, p in zip(args.config, cfg_override):
+            if not p.is_file():
+                ap.error(f"--config: {given} not found")
+        if len(chosen) != 1:
+            ap.error("--config needs exactly one target")
+        n_steps = len(TARGETS[chosen[0]]) or 1
+        if len(cfg_override) != n_steps:
+            ap.error(f"--config: {chosen[0]} runs {n_steps} config(s) in order ("
+                     + ", ".join(c for _, c in TARGETS[chosen[0]]) + "), got " + str(len(cfg_override)))
 
     global _LOG
     if not args.no_log:
@@ -192,7 +209,7 @@ def _run(args, chosen):
                 say("-- skipped (no imputation_comparison stage chosen)")
             else:
                 try:
-                    for label, cmd in imputation_commands(args.output_dir, stages):
+                    for label, cmd in imputation_commands(args.output_dir, stages, cfg_override[0] if cfg_override else None):
                         say(f"-- {label}")
                         rc = run(cmd)
                         rcs.append(rc)
@@ -203,7 +220,8 @@ def _run(args, chosen):
                     rcs.append(1)
             results[target] = max(rcs, default=0)
             continue
-        for kind, cfg_name in TARGETS[target]:
+        for i, (kind, cfg_name) in enumerate(TARGETS[target]):
+            cfg_name = cfg_override[i] if cfg_override else cfg_name
             stages = [s for s in args.stages or [] if s in STAGES] if kind == PIPELINE else None
             if kind == PIPELINE and args.stages and not stages:
                 say(f"-- {cfg_name}: skipped (no pipeline stage chosen)")
