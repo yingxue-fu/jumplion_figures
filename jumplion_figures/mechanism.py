@@ -209,8 +209,8 @@ def _tier_groups(evidence, feature, tiers=TIERS):
 
 
 # Short horizontal tick labels for the four evidence groups (Fig_Mechanism A and B).
-TIER_TICK_LABELS = {"reported": "DIA-NN\nreported", "ms2_coelution": "Co-eluting\nfragments",
-                    "ms1_peak": "Isotope\nenvelope", "prediction_only": "No qualifying\npeak"}
+TIER_TICK_LABELS = {"reported": "DIA-NN\nreported", "ms2_coelution": "MS2\nco-elution",
+                    "ms1_peak": "MS1\nisotope", "prediction_only": "No qualifying\npeak"}
 
 
 def two_level_tier_axis(fig, ax, tiers):
