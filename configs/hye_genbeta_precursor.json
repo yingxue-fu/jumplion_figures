@@ -1,7 +1,8 @@
 {
-  "output_dir": "${data_root}/analyses4",
+  "output_dir": "${output_dir}",
   "paths": {
     "data_root": "/path/to/gen_beta",
+    "output_dir": "/path/to/gen_beta/analyses4",
     "fasta": "/path/to/HYE_mix.fasta",
     "pub_dir": "${jumplion_outdir}/publication"
   },

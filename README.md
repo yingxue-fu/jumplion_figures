@@ -48,7 +48,7 @@ Every path you may need to change is at the top of each config: `output_dir` and
 - `paths.fasta`: your FASTA file (differential expression; `hye_wang`, `hye_genbeta_precursor`).
 - `paths.precursor_table_dir` (`hye_genbeta_protein`): the precursor run's `generalization/table`.
 - `paths.spectral_library` (`hye_wang`, only needed when the RT cross-validation tables are missing and must be regenerated, see `mechanism.rt_cv_regenerate`).
-- `output_dir`: where the figures and tables are written.
+- `paths.output_dir` (`hye_wang`, `hye_genbeta`) or top-level `output_dir` (single-cell): a folder of your choice where the figures and tables are written (it does not have to exist yet).
 - `imputation_comparison.rscript` (optional): path to `Rscript`, if it is not on your PATH.
 
 Start with one target (for example `python make_figures.py hye_wang`) before running everything: a plain `python make_figures.py` runs all default targets and so needs all of their configs filled in. Every setting is described under [Config](#config).

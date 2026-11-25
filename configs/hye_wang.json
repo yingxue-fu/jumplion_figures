@@ -1,10 +1,11 @@
 {
-  "output_dir": "${jumplion_outdir}/analyses5",
+  "output_dir": "${output_dir}",
   "paths": {
     "jumplion_outdir": "/path/to/jl_test/test_ms1ms2_new16",
     "sample_meta": "/path/to/jl_test/sample_meta.csv",
     "fasta": "/path/to/HYE_mix.fasta",
     "spectral_library": "/path/to/spectral_library.parquet",
+    "output_dir": "/path/to/jl_test/analyses",
     "pub_dir": "${jumplion_outdir}/publication",
     "inter_dir": "${jumplion_outdir}/intermediate"
   },
@@ -79,6 +80,6 @@
     "max_slope": 1.5,
     "max_mae": 0.5,
     "max_extrapolation_log2": 2,
-    "species_annotation": "${jumplion_outdir}/analyses2/differential_expression/diann_norm_dea_results/diann_norm_H50Y20E30_vs_H50Y10E40_pre_DE.csv"
+    "species_annotation": "${output_dir}/differential_expression/diann_norm_dea_results/diann_norm_H50Y20E30_vs_H50Y10E40_pre_DE.csv"
   }
 }
